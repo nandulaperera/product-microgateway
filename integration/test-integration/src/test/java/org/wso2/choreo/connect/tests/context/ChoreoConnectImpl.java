@@ -76,6 +76,15 @@ public abstract class ChoreoConnectImpl implements ChoreoConnect {
                 .until(isBackendAvailable());
     }
 
+    // Starts a container without a backend
+    public void startContainer() throws CCTestException {
+        try {
+            environment.start();
+        } catch (Exception e) {
+            throw new CCTestException("Error occurred when Choreo Connect docker-compose up: {}", e);
+        }
+    }
+
     public void stop() {
         environment.stop();
     }
