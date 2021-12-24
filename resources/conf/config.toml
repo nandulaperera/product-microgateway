@@ -14,6 +14,9 @@
 [adapter.truststore]
   location = "/home/wso2/security/truststore"
 
+[adapter.sourceControl]
+  enabled = false
+
 [router]
   listenerPort = 9090
   securedListenerPort = 9095
