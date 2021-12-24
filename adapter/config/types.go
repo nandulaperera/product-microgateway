@@ -93,6 +93,8 @@ type adapter struct {
 	Truststore truststore
 	// ArtifactsDirectory is the FilePath where the api artifacts are mounted
 	ArtifactsDirectory string
+	// SourceControl represents the configuration related to the repository where the api artifacts are stored
+	SourceControl sourceControl
 }
 
 // Envoy Listener Component related configurations.
@@ -177,6 +179,13 @@ type consul struct {
 	CertFile string
 	// KeyFile path to the key file(PEM encoded) required for tls connection between adapter and a consul client
 	KeyFile string
+}
+
+type sourceControl struct {
+	// Enabled whether source control should be enabled
+	Enabled bool
+	// Repository configurations
+	Repository repository
 }
 
 // Global CORS configurations
@@ -406,6 +415,12 @@ type JwtUser struct {
 type APICtlUser struct {
 	Username string
 	Password string
+}
+
+type repository struct {
+	Username string
+	AccessToken string
+	URL string
 }
 
 // ControlPlane struct contains configurations related to the API Manager

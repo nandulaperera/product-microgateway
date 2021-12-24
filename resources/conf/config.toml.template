@@ -63,6 +63,16 @@ artifactsDirectory = "/home/wso2/artifacts"
   # Optional path to the private key for Consul communication. If this is set, then you need to also set certFile
   keyFile = "/home/wso2/security/truststore/consul/local-dc-client-consul-0-key.pem"
 
+# Configuration related to the repository where the api artifacts are stored
+[adapter.sourceControl]
+  # Enable/Disable Source Control for API Artifacts
+  enabled = true
+  # Configurations of the repository
+  [adapter.sourceControl.repository]
+    username = "username" # Git username
+    accessToken = "access_token" # Git personal access token or password (personal access token preferred)
+    URL = "https://github.com/username/repository-name.git" # Repository URL where artifacts are stored
+
 # Configurations required for router to route the traffic from different clients to services
 [router] # --------------------------------------------------------
   # Host for listener of Router
