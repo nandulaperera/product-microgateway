@@ -13,7 +13,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "22:22"
+      - "8222:22"
     networks:
       - cc-gitlab
 networks:
