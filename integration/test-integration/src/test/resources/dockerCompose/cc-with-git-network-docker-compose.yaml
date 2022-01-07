@@ -4,7 +4,7 @@ networks:
     external: true
 services:
   router:
-    image: wso2/choreo-connect-router:1.0.0
+    image: wso2/choreo-connect-router:1.0.0-rc3-SNAPSHOT
     logging:
       options:
         max-size: "20m"
