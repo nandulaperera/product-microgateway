@@ -184,6 +184,8 @@ type consul struct {
 type sourceControl struct {
 	// Enabled whether source control should be enabled
 	Enabled bool
+	// PollInterval how frequently the source watcher should be polled to get updates from the remote repository (in seconds)
+	PollInterval int
 	// Repository configurations
 	Repository repository
 }
@@ -418,9 +420,9 @@ type APICtlUser struct {
 }
 
 type repository struct {
+	URL string
 	Username string
 	AccessToken string
-	URL string
 }
 
 // ControlPlane struct contains configurations related to the API Manager
