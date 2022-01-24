@@ -259,12 +259,14 @@ func Run(conf *config.Config) {
 			err := sourcewatcher.Start(conf)
 			if err != nil {
 				logger.LoggerMgw.Error("Error while starting the source watcher. ", err)
+				return
 			}
-		}
-		err := api.ProcessMountedAPIProjects()
-		if err != nil {
-			logger.LoggerMgw.Error("Readiness probe is not set as local api artifacts processing has failed.")
-			return
+		} else {
+			_, err := api.ProcessMountedAPIProjects()
+			if err != nil {
+				logger.LoggerMgw.Error("Readiness probe is not set as local api artifacts processing has failed.")
+				return
+			}
 		}
 		// We need to deploy the readiness probe when eventhub is disabled
 		xds.DeployReadinessAPI(envs)

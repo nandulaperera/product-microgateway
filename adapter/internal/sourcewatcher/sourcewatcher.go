@@ -18,19 +18,30 @@
 package sourcewatcher
 
 import (
+	"archive/zip"
+	"io"
+	"io/ioutil"
+	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
-	"github.com/wso2/product-microgateway/adapter/internal/loggers"
-	"github.com/wso2/product-microgateway/adapter/config"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/wso2/product-microgateway/adapter/config"
 	"github.com/wso2/product-microgateway/adapter/internal/api"
+	xds "github.com/wso2/product-microgateway/adapter/internal/discovery/xds"
+	"github.com/wso2/product-microgateway/adapter/internal/loggers"
+	logger "github.com/wso2/product-microgateway/adapter/internal/loggers"
+	mgw "github.com/wso2/product-microgateway/adapter/internal/oasparser/model"
 )
 
 const (
 	apisArtifactDir string = "apis"
+	zipExt          string = ".zip"
 )
+
+var artifactsMap map[string]mgw.ProjectAPI
 
 // Start fetches the API artifacts at the startup and polls for changes from the remote repository
 func Start(conf *config.Config) error{
@@ -41,17 +52,94 @@ func Start(conf *config.Config) error{
 		loggers.LoggerAPI.Error("Error while fetching API artifacts during startup. ", err)
 		return err
 	}
+
+	artifactsMap, err = api.ProcessMountedAPIProjects()
+	if err != nil {
+		logger.LoggerMgw.Error("Readiness probe is not set as local api artifacts processing has failed.")
+		return err
+	}
+
 	loggers.LoggerAPI.Info("Polling for changes")
 	go pollChanges(conf, repository)
 	return nil
 }
 
+func getAuth(conf *config.Config) *http.BasicAuth{
+	username := conf.Adapter.SourceControl.Repository.Username
+	if username != "" {
+		accessToken := conf.Adapter.SourceControl.Repository.AccessToken
+		return &http.BasicAuth{
+			Username: username,
+			Password: accessToken,
+		}
+	}
+	return &http.BasicAuth{}
+}
+
+func backupArtifacts(conf *config.Config) error {
+	sourceDir := filepath.FromSlash(conf.Adapter.ArtifactsDirectory + "/" + apisArtifactDir)
+	targetZip := filepath.FromSlash(conf.Adapter.ArtifactsDirectory + "/" + apisArtifactDir + zipExt)
+
+	f, err := os.Create(targetZip)
+
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	writer := zip.NewWriter(f)
+	defer writer.Close()
+
+	return filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+		header.Method = zip.Deflate
+		header.Name, err = filepath.Rel(filepath.Dir(sourceDir), path)
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			header.Name += "/"
+		}
+
+		headerWriter, err := writer.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		f, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		_, err = io.Copy(headerWriter, f)
+		return err
+	})
+}
+
 // fetchArtifacts clones the API artifacts from the remote repository into the APIs directory in the adapter
 func fetchArtifacts(conf *config.Config) (*git.Repository,error) {
+	// Backup existing apis before cloning
+	err := backupArtifacts(conf)
+
+	if err != nil {
+		loggers.LoggerAPI.Error("Error while backing up existing apis. ", err)
+	}
+
 	// Populate data from config
 	artifactsDirName := filepath.FromSlash(conf.Adapter.ArtifactsDirectory + "/" + apisArtifactDir)
-	username := conf.Adapter.SourceControl.Repository.Username
-	accessToken := conf.Adapter.SourceControl.Repository.AccessToken
 	repositoryURL := conf.Adapter.SourceControl.Repository.URL
 
 	// Opens the local repository, if exists
@@ -70,12 +158,9 @@ func fetchArtifacts(conf *config.Config) (*git.Repository,error) {
 	loggers.LoggerAPI.Info("Fetching API artifacts from remote repository")
 
 	// Clones the  remote repository
-	repository, err := git.PlainClone(artifactsDirName, false, &git.CloneOptions{
-		URL: repositoryURL,
-		Auth: &http.BasicAuth{
-			Username: username,
-			Password: accessToken,
-		},
+	repository, err = git.PlainClone(artifactsDirName, false, &git.CloneOptions{
+		URL:  repositoryURL,
+		Auth: getAuth(conf),
 	})
 
 	if err != nil {
@@ -88,17 +173,15 @@ func fetchArtifacts(conf *config.Config) (*git.Repository,error) {
 
 // pollChanges polls for changes from the remote repository
 func pollChanges(conf *config.Config, repository *git.Repository){
+	pollInterval := conf.Adapter.SourceControl.PollInterval
 	for {
-		<- time.After(30 * time.Second)
+		<- time.After(time.Duration(pollInterval) * time.Second)
 		go compareRepository(conf, repository)
 	}
 }
 
 // compareRepository compares the hashes of the local and remote repositories and pulls if there are any changes
 func compareRepository(conf *config.Config, localRepository *git.Repository){
-
-	username := conf.Adapter.SourceControl.Repository.Username
-	accessToken := conf.Adapter.SourceControl.Repository.AccessToken
 
 	remote, err := localRepository.Remote("origin")
 
@@ -107,10 +190,7 @@ func compareRepository(conf *config.Config, localRepository *git.Repository){
 	}
 
 	remoteList, err := remote.List(&git.ListOptions{
-		Auth: &http.BasicAuth{
-			Username: username,
-			Password: accessToken,
-		},
+		Auth: getAuth(conf),
 	})
 
 	if err != nil {
@@ -132,8 +212,10 @@ func compareRepository(conf *config.Config, localRepository *git.Repository){
 			loggers.LoggerAPI.Info("Fetching changes from remote repository")
 			pullChanges(conf, localRepository)
 
+			err := processArtifactChanges(conf)
+
 			//Redeploy changes
-			err = api.ProcessMountedAPIProjects()
+			artifactsMap, err = api.ProcessMountedAPIProjects()
 			if err != nil {
 				loggers.LoggerAPI.Error("Local api artifacts processing has failed.")
 				return
@@ -146,9 +228,6 @@ func compareRepository(conf *config.Config, localRepository *git.Repository){
 // pullChanges pulls changes from the given repository
 func pullChanges(conf *config.Config, localRepository *git.Repository){
 
-	username := conf.Adapter.SourceControl.Repository.Username
-	accessToken := conf.Adapter.SourceControl.Repository.AccessToken
-
 	workTree, err := localRepository.Worktree()
 
 	if err != nil {
@@ -156,15 +235,60 @@ func pullChanges(conf *config.Config, localRepository *git.Repository){
 	}
 
 	err = workTree.Pull(&git.PullOptions{
-		Auth: &http.BasicAuth{
-			Username: username,
-			Password: accessToken,
-		},
+		Auth: getAuth(conf),
 	})
 
 	if err != nil {
 		loggers.LoggerAPI.Error("Error while pulling changes from repository. ", err)
 	}
+}
+
+// processArtifactChanges undeploy the APIs whose artifacts are not present in the repository
+func processArtifactChanges(conf *config.Config) (err error){
+	apisDirName := filepath.FromSlash(conf.Adapter.ArtifactsDirectory + "/" + apisArtifactDir)
+	files, err := ioutil.ReadDir(apisDirName)
+	if err != nil {
+		loggers.LoggerAPI.Error("Error while reading api artifacts during startup. ", err)
+	}
+
+	removedArtifacts := artifactsMap
+
+	for _, apiProjectFile := range files {
+		if apiProjectFile.IsDir() {
+			if _, ok := removedArtifacts[apiProjectFile.Name()]; ok {
+				delete(removedArtifacts, apiProjectFile.Name())
+			}
+			continue
+		} else if !strings.HasSuffix(apiProjectFile.Name(), zipExt) {
+			continue
+		}
+		if _, ok := removedArtifacts[apiProjectFile.Name()]; ok {
+			delete(removedArtifacts, apiProjectFile.Name())
+		}
+	}
+
+	for _, apiProject := range removedArtifacts {
+		apiYaml := apiProject.APIYaml.Data
+
+		vhostToEnvsMap := make(map[string][]string)
+		for _, environment := range apiProject.Deployments {
+			vhostToEnvsMap[environment.DeploymentVhost] =
+				append(vhostToEnvsMap[environment.DeploymentVhost], environment.DeploymentEnvironment)
+		}
+
+		for vhost, environments := range vhostToEnvsMap {
+			if vhost == "" {
+				// ignore if vhost is empty, since it deletes all vhosts of API
+				continue
+			}
+			err = xds.DeleteAPIs(vhost, apiYaml.Name, apiYaml.Version, environments, apiProject.OrganizationID)
+
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 
