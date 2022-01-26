@@ -16,10 +16,12 @@
 
 [adapter.sourceControl]
   enabled = true
+  pollInterval = 2
+  artifactsDirectory = "/home/wso2/git-artifacts"
   [adapter.sourceControl.repository]
+    URL = "http://gitlab/root/testProject"
     username = "root"
     accessToken = "svcAdmin"
-    URL = "http://gitlab/root/testProject"
 
 
 [router]

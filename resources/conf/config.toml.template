@@ -69,6 +69,8 @@ artifactsDirectory = "/home/wso2/artifacts"
   enabled = true
   # Time interval (in seconds) in which the Adapter should fetch updates from the remote repository
   pollInterval = 30
+  # The directory path where the git artifacts are stored
+  artifactsDirectory = "/home/wso2/git-artifacts"
   # Configurations of the repository
   [adapter.sourceControl.repository]
     URL = "https://github.com/username/repository-name.git" # Repository URL where artifacts are stored

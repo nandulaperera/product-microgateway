@@ -186,6 +186,8 @@ type sourceControl struct {
 	Enabled bool
 	// PollInterval how frequently the source watcher should be polled to get updates from the remote repository (in seconds)
 	PollInterval int
+	// ArtifactsDirectory is the FilePath where the api artifacts are mounted
+	ArtifactsDirectory string
 	// Repository configurations
 	Repository repository
 }
