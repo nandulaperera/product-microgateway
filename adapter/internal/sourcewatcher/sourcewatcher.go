@@ -45,6 +45,7 @@ var artifactsMap map[string]mgw.ProjectAPI
 
 // Start fetches the API artifacts at the startup and polls for changes from the remote repository
 func Start(conf *config.Config) error{
+	conf.Adapter.ArtifactsDirectory = conf.Adapter.SourceControl.ArtifactsDirectory
 	loggers.LoggerAPI.Info("Starting source watcher")
 	repository, err := fetchArtifacts(conf)
 
