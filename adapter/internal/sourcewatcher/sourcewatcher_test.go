@@ -11,58 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Test the fetchArtifacts method for a public repository
-func TestFetchArtifacts(t *testing.T) {
-	conf, _ := config.ReadConfigs()
-
-	dir, err := ioutil.TempDir("", "test")
-
-	defer os.RemoveAll(dir)
-
-	if err != nil {
-		t.Error("Error creating temp directory." + err.Error())
-	}
-
-	conf.Adapter.ArtifactsDirectory = dir
-	conf.Adapter.SourceControl.Repository.Username = ""
-	conf.Adapter.SourceControl.Repository.AccessToken = ""
-	conf.Adapter.SourceControl.Repository.URL = "https://github.com/wso2/product-microgateway"
-
-	repository, err := fetchArtifacts(conf)
-
-	assert.NotNil(t, repository, "Fetching artifacts failed")
-	assert.Nil(t, err, "Error fetching artifacts")
-}
-
-func TestFetchArtifactsForExistingRepository(t *testing.T) {
-	conf, _ := config.ReadConfigs()
-
-	dir, err := ioutil.TempDir("", "test")
-
-	defer os.RemoveAll(dir)
-
-	if err != nil {
-		t.Error("Error creating temp directory." + err.Error())
-	}
-
-	conf.Adapter.ArtifactsDirectory = dir
-	conf.Adapter.SourceControl.Repository.Username = ""
-	conf.Adapter.SourceControl.Repository.AccessToken = ""
-	conf.Adapter.SourceControl.Repository.URL = "https://github.com/wso2/product-microgateway"
-
-	repository, err := fetchArtifacts(conf)
-
-	if err != nil {
-		t.Error("Error fetching artifacts")
-	}
-
-	repository, err = fetchArtifacts(conf)
-
-	assert.NotNil(t, repository, "Fetching artifacts failed")
-	assert.Nil(t, err, "Error fetching artifacts")
-
-}
-
 // Test the fetchArtifacts method for a public repository with invalid credentials
 func TestFetchArtifactsWithInvalidCredentials(t *testing.T) {
 	conf, _ := config.ReadConfigs()
@@ -100,7 +48,7 @@ func TestFetchArtifactsWithInvalidRepository(t *testing.T) {
 	conf.Adapter.ArtifactsDirectory = dir
 	conf.Adapter.SourceControl.Repository.Username = ""
 	conf.Adapter.SourceControl.Repository.AccessToken = ""
-	conf.Adapter.SourceControl.Repository.URL = "https://github.com/wso2/invalid-repository"
+	conf.Adapter.SourceControl.Repository.URL = "https://github.com/user/repository"
 
 	_, err = fetchArtifacts(conf)
 
