@@ -18,6 +18,7 @@
 
 package org.wso2.choreo.connect.tests.setup.standalone;
 
+import org.awaitility.Awaitility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterTest;
@@ -27,6 +28,10 @@ import org.wso2.choreo.connect.tests.context.CcInstance;
 import org.wso2.choreo.connect.tests.util.*;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class CcWithSourceControl {
@@ -34,8 +39,6 @@ public class CcWithSourceControl {
 
     CcInstance ccInstance;
     CcInstance gitInstance;
-
-    private String accessToken = "";
 
     @BeforeTest(description = "initialise the setup")
     void start() throws Exception {
@@ -64,18 +67,31 @@ public class CcWithSourceControl {
         log.info("Starting Git instance");
         gitInstance.startContainer();
 
-        // Sleep until the container is healthy
-        TimeUnit.MINUTES.sleep(4);
+        Awaitility.await().pollDelay(10, TimeUnit.SECONDS).pollInterval(10, TimeUnit.SECONDS)
+                .atMost(4, TimeUnit.MINUTES).until(gitInstance.isGitHealthy());
+    }
+
+    private void commitInitialFiles() throws Exception {
+        List<String> filePaths = new ArrayList<>();
+        File artifactsDir = new File(Utils.getTargetDirPath() + TestConstant.TEST_RESOURCES_PATH + SourceControlUtils.ARTIFACTS_DIR + SourceControlUtils.DIRECTORY);
+        SourceControlUtils.getFiles(artifactsDir, filePaths);
+        Map<String, String> fileActions = new HashMap<>();
+
+        for (String filePath : filePaths){
+            fileActions.put(filePath, SourceControlUtils.ADD_FILE);
+        }
+
+        SourceControlUtils.commitFiles(Utils.getTargetDirPath() + TestConstant.TEST_RESOURCES_PATH + SourceControlUtils.ARTIFACTS_DIR + SourceControlUtils.DIRECTORY, SourceControlUtils.GIT_PROJECT_PATH, SourceControlUtils.GIT_PROJECT_BRANCH, "Initial Commit", fileActions);
+        TimeUnit.SECONDS.sleep(4);
     }
 
     private void setupGitInstance() throws Exception{
         startGitInstance();
         log.info("Started Git instance");
-        accessToken = SourceControlUtils.getAccessToken(SourceControlUtils.GIT_USERNAME, SourceControlUtils.GIT_PASSWORD);
-        SourceControlUtils.testGitStatus(accessToken);
-        SourceControlUtils.createProject(accessToken, SourceControlUtils.GIT_PROJECT_NAME, SourceControlUtils.GIT_PROJECT_PATH);
-        SourceControlUtils.commitFiles(Utils.getTargetDirPath() + TestConstant.TEST_RESOURCES_PATH + SourceControlUtils.ARTIFACTS_DIR, SourceControlUtils.GIT_USERNAME, SourceControlUtils.GIT_PROJECT_PATH, SourceControlUtils.GIT_PROJECT_BRANCH, "Initial Commit", accessToken);
-        TimeUnit.MINUTES.sleep(1);
+        SourceControlUtils.generateAccessToken();
+        SourceControlUtils.testGitStatus();
+        SourceControlUtils.createProject(SourceControlUtils.GIT_PROJECT_NAME, SourceControlUtils.GIT_PROJECT_PATH);
+        commitInitialFiles();
     }
 
     @AfterTest(description = "stop the setup")
@@ -83,7 +99,6 @@ public class CcWithSourceControl {
         ccInstance.stop();
         gitInstance.stop();
         ApictlUtils.removeEnv("test");
-        Utils.deleteFolder(new File(SourceControlUtils.GIT_DIRECTORY));
     }
 
 }
