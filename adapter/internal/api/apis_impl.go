@@ -212,6 +212,7 @@ func validateAndUpdateXds(apiProject model.ProjectAPI, override *bool) (updatedA
 			loggers.LoggerAPI.Infof("Error creating new API. API %v:%v already exists.",
 				apiYaml.Name, apiYaml.Version)
 			return updatedAPIProject, errors.New(constants.AlreadyExists)
+		}
 	}
 	vhostToEnvsMap := make(map[string][]string)
 	for _, environment := range apiProject.Deployments {

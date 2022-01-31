@@ -3,7 +3,6 @@ package sourcewatcher
 import (
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/wso2/product-microgateway/adapter/config"
@@ -84,40 +83,4 @@ func TestGetAuthWithCredentials(t *testing.T) {
 	}
 
 	assert.Equal(t, expectedAuth, actualAuth, "Invalid auth")
-}
-
-// Test the backupArtifacts method
-func TestBackupArtifacts(t *testing.T){
-	dir, err := ioutil.TempDir("", "test")
-	defer os.RemoveAll(dir)
-
-	if err != nil {
-		t.Error("Error creating temp directory." + err.Error())
-	}
-
-	err = os.Mkdir(filepath.Join(dir, apisArtifactDir), 0777)
-
-	if err != nil {
-		t.Error("Error creating apis directory." + err.Error())
-	}
-
-	file, err := os.Create(filepath.Join(dir, apisArtifactDir, "test.txt"))
-
-	if err != nil {
-		t.Error("Error creating temp file." + err.Error())
-	}
-
-	defer file.Close()
-
-	conf, err := config.ReadConfigs()
-
-	if err != nil {
-		t.Error("Error reading configs." + err.Error())
-	}
-
-	conf.Adapter.ArtifactsDirectory = dir
-
-	err = backupArtifacts(conf)
-
-	assert.Nil(t, err, "Error backing up artifacts")
 }
