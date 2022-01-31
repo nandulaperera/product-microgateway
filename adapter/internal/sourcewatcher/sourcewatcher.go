@@ -18,10 +18,7 @@
 package sourcewatcher
 
 import (
-	"archive/zip"
-	"io"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -33,7 +30,7 @@ import (
 	xds "github.com/wso2/product-microgateway/adapter/internal/discovery/xds"
 	"github.com/wso2/product-microgateway/adapter/internal/loggers"
 	logger "github.com/wso2/product-microgateway/adapter/internal/loggers"
-	mgw "github.com/wso2/product-microgateway/adapter/internal/oasparser/model"
+	"github.com/wso2/product-microgateway/adapter/internal/oasparser/model"
 )
 
 const (
@@ -41,7 +38,7 @@ const (
 	zipExt          string = ".zip"
 )
 
-var artifactsMap map[string]mgw.ProjectAPI
+var artifactsMap map[string]model.ProjectAPI
 
 // Start fetches the API artifacts at the startup and polls for changes from the remote repository
 func Start(conf *config.Config) error{
@@ -77,68 +74,8 @@ func getAuth(conf *config.Config) *http.BasicAuth{
 	return &http.BasicAuth{}
 }
 
-func backupArtifacts(conf *config.Config) error {
-	sourceDir := filepath.FromSlash(conf.Adapter.ArtifactsDirectory + "/" + apisArtifactDir)
-	targetZip := filepath.FromSlash(conf.Adapter.ArtifactsDirectory + "/" + apisArtifactDir + zipExt)
-
-	f, err := os.Create(targetZip)
-
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	writer := zip.NewWriter(f)
-	defer writer.Close()
-
-	return filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		header, err := zip.FileInfoHeader(info)
-		if err != nil {
-			return err
-		}
-		header.Method = zip.Deflate
-		header.Name, err = filepath.Rel(filepath.Dir(sourceDir), path)
-		if err != nil {
-			return err
-		}
-
-		if info.IsDir() {
-			header.Name += "/"
-		}
-
-		headerWriter, err := writer.CreateHeader(header)
-		if err != nil {
-			return err
-		}
-
-		if info.IsDir() {
-			return nil
-		}
-
-		f, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-
-		_, err = io.Copy(headerWriter, f)
-		return err
-	})
-}
-
 // fetchArtifacts clones the API artifacts from the remote repository into the APIs directory in the adapter
 func fetchArtifacts(conf *config.Config) (*git.Repository,error) {
-	// Backup existing apis before cloning
-	err := backupArtifacts(conf)
-
-	if err != nil {
-		loggers.LoggerAPI.Error("Error while backing up existing apis. ", err)
-	}
-
 	// Populate data from config
 	artifactsDirName := filepath.FromSlash(conf.Adapter.ArtifactsDirectory + "/" + apisArtifactDir)
 	repositoryURL := conf.Adapter.SourceControl.Repository.URL
@@ -159,7 +96,7 @@ func fetchArtifacts(conf *config.Config) (*git.Repository,error) {
 	loggers.LoggerAPI.Info("Fetching API artifacts from remote repository")
 
 	// Clones the  remote repository
-	repository, err = git.PlainClone(artifactsDirName, false, &git.CloneOptions{
+	repository, err := git.PlainClone(artifactsDirName, false, &git.CloneOptions{
 		URL:  repositoryURL,
 		Auth: getAuth(conf),
 	})
