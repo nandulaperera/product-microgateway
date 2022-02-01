@@ -23,6 +23,7 @@ func TestFetchArtifactsWithInvalidCredentials(t *testing.T) {
 	}
 
 	conf.Adapter.ArtifactsDirectory = dir
+	conf.Adapter.SourceControl.ArtifactsDirectory = dir
 	conf.Adapter.SourceControl.Repository.Username = "admin"
 	conf.Adapter.SourceControl.Repository.AccessToken = "admin"
 	conf.Adapter.SourceControl.Repository.URL = "https://github.com/wso2/product-microgateway"
@@ -45,6 +46,7 @@ func TestFetchArtifactsWithInvalidRepository(t *testing.T) {
 	}
 
 	conf.Adapter.ArtifactsDirectory = dir
+	conf.Adapter.SourceControl.ArtifactsDirectory = dir
 	conf.Adapter.SourceControl.Repository.Username = ""
 	conf.Adapter.SourceControl.Repository.AccessToken = ""
 	conf.Adapter.SourceControl.Repository.URL = "https://github.com/user/repository"
