@@ -137,6 +137,7 @@ func ProcessMountedAPIProjects() (artifactsMap map[string]model.ProjectAPI,err e
 					apiProjectFile.Name(), err)
 				continue
 			}
+
 			overrideValue := true
 			apiProject, err = validateAndUpdateXds(apiProject, &overrideValue)
 			if err != nil {
