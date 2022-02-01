@@ -137,8 +137,7 @@ func ProcessMountedAPIProjects() (artifactsMap map[string]model.ProjectAPI,err e
 					apiProjectFile.Name(), err)
 				continue
 			}
-
-			overrideValue := false
+			overrideValue := true
 			apiProject, err = validateAndUpdateXds(apiProject, &overrideValue)
 			if err != nil {
 				loggers.LoggerAPI.Errorf("Error while processing api artifact - %s during startup : %v", apiProjectFile.Name(), err)
@@ -156,7 +155,7 @@ func ProcessMountedAPIProjects() (artifactsMap map[string]model.ProjectAPI,err e
 		}
 
 		// logger.LoggerMgw.Debugf("API artifact  - %s is read successfully.", file.Name())
-		overrideAPIParam := false
+		overrideAPIParam := true
 		apiProject, err := ApplyAPIProjectInStandaloneMode(data, &overrideAPIParam)
 		if err != nil {
 			loggers.LoggerAPI.Errorf("Error while processing api artifact - %s during startup : %v", apiProjectFile.Name(), err)

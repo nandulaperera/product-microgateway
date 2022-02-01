@@ -42,7 +42,6 @@ var artifactsMap map[string]model.ProjectAPI
 
 // Start fetches the API artifacts at the startup and polls for changes from the remote repository
 func Start(conf *config.Config) error{
-	conf.Adapter.ArtifactsDirectory = conf.Adapter.SourceControl.ArtifactsDirectory
 	loggers.LoggerAPI.Info("Starting source watcher")
 	repository, err := fetchArtifacts(conf)
 
@@ -77,7 +76,7 @@ func getAuth(conf *config.Config) *http.BasicAuth{
 // fetchArtifacts clones the API artifacts from the remote repository into the APIs directory in the adapter
 func fetchArtifacts(conf *config.Config) (*git.Repository,error) {
 	// Populate data from config
-	artifactsDirName := filepath.FromSlash(conf.Adapter.ArtifactsDirectory + "/" + apisArtifactDir)
+	artifactsDirName := filepath.FromSlash(conf.Adapter.SourceControl.ArtifactsDirectory + "/" + apisArtifactDir)
 	repositoryURL := conf.Adapter.SourceControl.Repository.URL
 
 	// Opens the local repository, if exists
@@ -183,7 +182,7 @@ func pullChanges(conf *config.Config, localRepository *git.Repository){
 
 // processArtifactChanges undeploy the APIs whose artifacts are not present in the repository
 func processArtifactChanges(conf *config.Config) (err error){
-	apisDirName := filepath.FromSlash(conf.Adapter.ArtifactsDirectory + "/" + apisArtifactDir)
+	apisDirName := filepath.FromSlash(conf.Adapter.SourceControl.ArtifactsDirectory + "/" + apisArtifactDir)
 	files, err := ioutil.ReadDir(apisDirName)
 	if err != nil {
 		loggers.LoggerAPI.Error("Error while reading api artifacts during startup. ", err)
