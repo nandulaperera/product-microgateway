@@ -41,6 +41,7 @@ public class SourceControlUtils {
 
     public static final String GIT_URL = "http://localhost";
     public static final String GIT_API_URL = "http://localhost/api/v4";
+    public static final String GIT_HEALTH_URL = "http://localhost/-/liveness";
     public static final String ARTIFACTS_DIR = File.separator + "git-artifacts";
     public static final String GIT_USERNAME = "root";
     public static final String GIT_PASSWORD = "svcAdmin";
@@ -91,37 +92,33 @@ public class SourceControlUtils {
     /**
      * Create a new Gitlab project owned by the authenticated user
      *
-     * @param projectName   Name of the new project
-     * @param projectPath   Repository name for the new project
      * @throws IOException  If an error occurs while sending the POST request
      */
-    public static void createProject(String projectName, String projectPath) throws IOException {
-        String postBody = "name=" + projectName + "&path=" + projectPath;
+    public static void createProject() throws IOException {
+        String postBody = "name=" + GIT_PROJECT_NAME + "&path=" + GIT_PROJECT_PATH;
         Map<String, String> headers = new HashMap<>();
         headers.put(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
         HttpResponse response = HttpClientRequest.doPost(GIT_API_URL + "/projects", postBody, headers);
         Assert.assertNotNull(response);
         Assert.assertEquals(response.getResponseCode(), HttpStatus.SC_CREATED);
-        log.info("New project created at " + GIT_URL + "/" + GIT_USERNAME + "/" + projectPath + ".git");
+        log.info("New project created at " + GIT_URL + "/" + GIT_USERNAME + "/" + GIT_PROJECT_PATH + ".git");
     }
 
     /**
      * Commits files to the given Gitlab repository
      *
      * @param artifactsDirectoryPath    Path of the artifacts directory
-     * @param projectPath           Repository name for the new project
-     * @param branchName            Name of the branch to commit into
      * @param commitMessage         Commit Message
      * @throws Exception
      */
-    public static void commitFiles(String artifactsDirectoryPath, String projectPath, String branchName, String commitMessage, Map<String, String> fileActions) throws Exception{
+    public static void commitFiles(String artifactsDirectoryPath, String commitMessage, Map<String, String> fileActions) throws Exception{
         JSONObject payload = new JSONObject();
 
         JSONArray actions = new JSONArray();
         File artifactsDir = new File(artifactsDirectoryPath);
         readArtifactsDirectory(artifactsDir, artifactsDirectoryPath, actions, fileActions);
 
-        payload.put("branch", branchName);
+        payload.put("branch", GIT_PROJECT_BRANCH);
         payload.put("commit_message", commitMessage);
         payload.put("actions", actions);
         String payloadString = payload.toString();
@@ -130,7 +127,7 @@ public class SourceControlUtils {
         headers.put(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
         headers.put("Content-Type", "application/json");
 
-        HttpResponse response = HttpClientRequest.doPost(GIT_API_URL + "/projects/" + GIT_USERNAME + "%2F" + projectPath + "/repository/commits", payloadString, headers);
+        HttpResponse response = HttpClientRequest.doPost(GIT_API_URL + "/projects/" + GIT_USERNAME + "%2F" + GIT_PROJECT_PATH + "/repository/commits", payloadString, headers);
 
         Assert.assertNotNull(response);
         Assert.assertEquals(response.getResponseCode(), HttpStatus.SC_CREATED);
@@ -170,6 +167,12 @@ public class SourceControlUtils {
         }
     }
 
+    /**
+     * Reads the given directory and adds the file paths to the given list
+     *
+     * @param directory               Path of the directory
+     * @param filesList               List of file paths
+     */
     public static void getFiles(File directory, List<String> filesList){
         File[] files = directory.listFiles();
         for (File file : files){
@@ -216,6 +219,14 @@ public class SourceControlUtils {
         return encodedBase64;
     }
 
+    /**
+     * Creates a JSON object for adding a file to the repository
+     *
+     * @param file
+     * @param filePath
+     * @return
+     * @throws IOException  If any error occurs when reading the file
+     */
     public static JSONObject addFile(File file, String filePath) throws IOException {
         JSONObject action = new JSONObject();
         action.put("action", "create");
@@ -231,6 +242,14 @@ public class SourceControlUtils {
         return action;
     }
 
+    /**
+     * Creates a JSON object for updating a file in the repository
+     *
+     * @param file
+     * @param filePath
+     * @return
+     * @throws IOException  If any error occurs when reading the file
+     */
     public static JSONObject updateFile(File file, String filePath) throws IOException {
         JSONObject action = new JSONObject();
         action.put("action", "update");
@@ -246,6 +265,12 @@ public class SourceControlUtils {
         return action;
     }
 
+    /**
+     * Creates a JSON object for deleting a file from the repository
+     *
+     * @param filePath
+     * @return
+     */
     public static JSONObject deleteFile(String filePath){
         JSONObject action = new JSONObject();
         action.put("action", "delete");

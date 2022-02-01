@@ -65,7 +65,7 @@ public class SourceWatcherTestCase {
             fileActions.put(filePath, SourceControlUtils.DELETE_FILE);
         }
 
-        SourceControlUtils.commitFiles(Utils.getTargetDirPath() + TestConstant.TEST_RESOURCES_PATH + SourceControlUtils.ARTIFACTS_DIR + SourceControlUtils.DIRECTORY, SourceControlUtils.GIT_PROJECT_PATH, SourceControlUtils.GIT_PROJECT_BRANCH, "Delete artifacts", fileActions);
+        SourceControlUtils.commitFiles(Utils.getTargetDirPath() + TestConstant.TEST_RESOURCES_PATH + SourceControlUtils.ARTIFACTS_DIR + SourceControlUtils.DIRECTORY, "Delete artifacts", fileActions);
         TimeUnit.SECONDS.sleep(4);
     }
 
@@ -90,7 +90,7 @@ public class SourceWatcherTestCase {
             fileActions.put(filePath, SourceControlUtils.ADD_FILE);
         }
 
-        SourceControlUtils.commitFiles(Utils.getTargetDirPath() + TestConstant.TEST_RESOURCES_PATH + SourceControlUtils.ARTIFACTS_DIR + SourceControlUtils.ZIP, SourceControlUtils.GIT_PROJECT_PATH, SourceControlUtils.GIT_PROJECT_BRANCH, "Add zip artifacts", fileActions);
+        SourceControlUtils.commitFiles(Utils.getTargetDirPath() + TestConstant.TEST_RESOURCES_PATH + SourceControlUtils.ARTIFACTS_DIR + SourceControlUtils.ZIP, "Add zip artifacts", fileActions);
         TimeUnit.SECONDS.sleep(4);
     }
 
@@ -115,7 +115,7 @@ public class SourceWatcherTestCase {
             fileActions.put(filePath, SourceControlUtils.UPDATE_FILE);
         }
 
-        SourceControlUtils.commitFiles(Utils.getTargetDirPath() + TestConstant.TEST_RESOURCES_PATH + SourceControlUtils.ARTIFACTS_DIR + SourceControlUtils.UPDATE, SourceControlUtils.GIT_PROJECT_PATH, SourceControlUtils.GIT_PROJECT_BRANCH, "Update zip artifacts", fileActions);
+        SourceControlUtils.commitFiles(Utils.getTargetDirPath() + TestConstant.TEST_RESOURCES_PATH + SourceControlUtils.ARTIFACTS_DIR + SourceControlUtils.UPDATE, "Update zip artifacts", fileActions);
         TimeUnit.SECONDS.sleep(4);
     }
 

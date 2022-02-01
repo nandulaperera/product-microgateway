@@ -61,6 +61,7 @@ func Start(conf *config.Config) error{
 	return nil
 }
 
+// getAuth returns the authentication for the repository
 func getAuth(conf *config.Config) *http.BasicAuth{
 	username := conf.Adapter.SourceControl.Repository.Username
 	if username != "" {
@@ -73,14 +74,13 @@ func getAuth(conf *config.Config) *http.BasicAuth{
 	return &http.BasicAuth{}
 }
 
-// fetchArtifacts clones the API artifacts from the remote repository into the APIs directory in the adapter
-func fetchArtifacts(conf *config.Config) (*git.Repository,error) {
-	// Populate data from config
+// fetchArtifacts clones the API artifacts from the remote repository into the artifacts directory in the adapter
+func fetchArtifacts(conf *config.Config) (repository *git.Repository,err error) {
 	artifactsDirName := filepath.FromSlash(conf.Adapter.SourceControl.ArtifactsDirectory + "/" + apisArtifactDir)
 	repositoryURL := conf.Adapter.SourceControl.Repository.URL
 
 	// Opens the local repository, if exists
-	repository, _ := git.PlainOpen(artifactsDirName)
+	repository, _ = git.PlainOpen(artifactsDirName)
 
 	// If a local repository exists, pull the changes from the remote repository
 	if repository != nil {
@@ -95,7 +95,7 @@ func fetchArtifacts(conf *config.Config) (*git.Repository,error) {
 	loggers.LoggerAPI.Info("Fetching API artifacts from remote repository")
 
 	// Clones the  remote repository
-	repository, err := git.PlainClone(artifactsDirName, false, &git.CloneOptions{
+	repository, err = git.PlainClone(artifactsDirName, false, &git.CloneOptions{
 		URL:  repositoryURL,
 		Auth: getAuth(conf),
 	})
@@ -121,7 +121,6 @@ func pollChanges(conf *config.Config, repository *git.Repository){
 func compareRepository(conf *config.Config, localRepository *git.Repository){
 
 	remote, err := localRepository.Remote("origin")
-
 	if err != nil{
 		loggers.LoggerAPI.Error("Error while returning remote. ", err)
 	}
@@ -129,13 +128,11 @@ func compareRepository(conf *config.Config, localRepository *git.Repository){
 	remoteList, err := remote.List(&git.ListOptions{
 		Auth: getAuth(conf),
 	})
-
 	if err != nil {
 		loggers.LoggerAPI.Error("Error while listing remote. ", err)
 	}
 
 	ref, err := localRepository.Head()
-
 	if err != nil {
 		loggers.LoggerAPI.Error("Error while retrieving Head. ", err)
 	}
@@ -150,11 +147,14 @@ func compareRepository(conf *config.Config, localRepository *git.Repository){
 			pullChanges(conf, localRepository)
 
 			err := processArtifactChanges(conf)
+			if err != nil {
+				loggers.LoggerAPI.Error("Error while processing artifact changes. ", err)
+			}
 
 			//Redeploy changes
 			artifactsMap, err = api.ProcessMountedAPIProjects()
 			if err != nil {
-				loggers.LoggerAPI.Error("Local api artifacts processing has failed.")
+				loggers.LoggerAPI.Error("Local api artifacts processing has failed.", err)
 				return
 			}
 		}
@@ -164,9 +164,7 @@ func compareRepository(conf *config.Config, localRepository *git.Repository){
 
 // pullChanges pulls changes from the given repository
 func pullChanges(conf *config.Config, localRepository *git.Repository){
-
 	workTree, err := localRepository.Worktree()
-
 	if err != nil {
 		loggers.LoggerAPI.Error("Error while retrieving the worktree. ", err)
 	}
@@ -174,7 +172,6 @@ func pullChanges(conf *config.Config, localRepository *git.Repository){
 	err = workTree.Pull(&git.PullOptions{
 		Auth: getAuth(conf),
 	})
-
 	if err != nil {
 		loggers.LoggerAPI.Error("Error while pulling changes from repository. ", err)
 	}
@@ -188,10 +185,12 @@ func processArtifactChanges(conf *config.Config) (err error){
 		loggers.LoggerAPI.Error("Error while reading api artifacts during startup. ", err)
 	}
 
+	// Assign the API artifacts to a temporary map
 	removedArtifacts := artifactsMap
 
 	for _, apiProjectFile := range files {
 		if apiProjectFile.IsDir() {
+			// If the artifact is present in the artifacts directory, remove it from the temporary map
 			if _, ok := removedArtifacts[apiProjectFile.Name()]; ok {
 				delete(removedArtifacts, apiProjectFile.Name())
 			}
@@ -204,6 +203,7 @@ func processArtifactChanges(conf *config.Config) (err error){
 		}
 	}
 
+	// Undeploy the APIs whose artifacts are not present in the repository
 	for _, apiProject := range removedArtifacts {
 		apiYaml := apiProject.APIYaml.Data
 

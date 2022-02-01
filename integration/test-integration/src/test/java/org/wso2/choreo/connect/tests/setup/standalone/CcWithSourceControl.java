@@ -71,6 +71,19 @@ public class CcWithSourceControl {
                 .atMost(4, TimeUnit.MINUTES).until(gitInstance.isGitHealthy());
     }
 
+    private void setupGitInstance() throws Exception{
+        startGitInstance();
+        log.info("Started Git instance");
+        // Generate an access token for accessing the git instance
+        SourceControlUtils.generateAccessToken();
+        // Test the status of the Gitlab REST API
+        SourceControlUtils.testGitStatus();
+        // Create a new project
+        SourceControlUtils.createProject();
+        // Commit the initial files to the project
+        commitInitialFiles();
+    }
+
     private void commitInitialFiles() throws Exception {
         List<String> filePaths = new ArrayList<>();
         File artifactsDir = new File(Utils.getTargetDirPath() + TestConstant.TEST_RESOURCES_PATH + SourceControlUtils.ARTIFACTS_DIR + SourceControlUtils.DIRECTORY);
@@ -81,17 +94,8 @@ public class CcWithSourceControl {
             fileActions.put(filePath, SourceControlUtils.ADD_FILE);
         }
 
-        SourceControlUtils.commitFiles(Utils.getTargetDirPath() + TestConstant.TEST_RESOURCES_PATH + SourceControlUtils.ARTIFACTS_DIR + SourceControlUtils.DIRECTORY, SourceControlUtils.GIT_PROJECT_PATH, SourceControlUtils.GIT_PROJECT_BRANCH, "Initial Commit", fileActions);
+        SourceControlUtils.commitFiles(Utils.getTargetDirPath() + TestConstant.TEST_RESOURCES_PATH + SourceControlUtils.ARTIFACTS_DIR + SourceControlUtils.DIRECTORY, "Initial Commit", fileActions);
         TimeUnit.SECONDS.sleep(4);
-    }
-
-    private void setupGitInstance() throws Exception{
-        startGitInstance();
-        log.info("Started Git instance");
-        SourceControlUtils.generateAccessToken();
-        SourceControlUtils.testGitStatus();
-        SourceControlUtils.createProject(SourceControlUtils.GIT_PROJECT_NAME, SourceControlUtils.GIT_PROJECT_PATH);
-        commitInitialFiles();
     }
 
     @AfterTest(description = "stop the setup")
