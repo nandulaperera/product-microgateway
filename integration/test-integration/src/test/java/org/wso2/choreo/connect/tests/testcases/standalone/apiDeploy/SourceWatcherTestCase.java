@@ -99,7 +99,7 @@ public class SourceWatcherTestCase {
         commitZipArtifact();
         Map<String, String> headers = new HashMap<>();
         headers.put(HttpHeaderNames.AUTHORIZATION.toString(), "Bearer " + jwtToken);
-        HttpResponse response = HttpsClientRequest.doGet(Utils.getServiceURLHttps("/v2/pet/findByStatus?status=available") , headers);
+        HttpResponse response = HttpsClientRequest.doGet(Utils.getServiceURLHttps("/v2/store/inventory") , headers);
 
         Assert.assertNotNull(response);
         Assert.assertEquals(response.getResponseCode(), HttpStatus.SC_OK,"Response code mismatched");
@@ -124,9 +124,9 @@ public class SourceWatcherTestCase {
         commitUpdatedArtifact();
         Map<String, String> headers = new HashMap<>();
         headers.put(HttpHeaderNames.AUTHORIZATION.toString(), "Bearer " + jwtToken);
-        HttpResponse response = HttpsClientRequest.doGet(Utils.getServiceURLHttps("/v2/pet/findByStatus?status=available") , headers);
+        HttpResponse response = HttpsClientRequest.doGet(Utils.getServiceURLHttps("/v2/store/inventory") , headers);
 
         Assert.assertNotNull(response);
-        Assert.assertEquals(response.getResponseCode(), HttpStatus.SC_UNAUTHORIZED,"Response code mismatched");
+        Assert.assertEquals(response.getResponseCode(), HttpStatus.SC_NOT_FOUND,"Response code mismatched");
     }
 }
