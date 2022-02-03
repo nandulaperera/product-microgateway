@@ -186,6 +186,8 @@ type sourceControl struct {
 	Enabled bool
 	// PollInterval how frequently the source watcher should be polled to get updates from the remote repository (in seconds)
 	PollInterval int
+	// RetryInterval how frequently the source watcher should retry to fetching artifacts from the remote repository (in seconds)
+	RetryInterval int
 	// ArtifactsDirectory is the FilePath where the api artifacts are created when fetched from the remote repository
 	ArtifactsDirectory string
 	// Repository configurations
@@ -423,8 +425,11 @@ type APICtlUser struct {
 
 type repository struct {
 	URL string
+	Branch string
 	Username string
 	AccessToken string
+	// SSHKeyFile path to the private key file
+	SSHKeyFile string
 }
 
 // ControlPlane struct contains configurations related to the API Manager
