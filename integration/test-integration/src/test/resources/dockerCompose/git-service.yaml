@@ -1,5 +1,4 @@
-version: "3.7"
-services:
+
   gitlab:
     image: "gitlab/gitlab-ee:latest"
     restart: always
@@ -9,9 +8,3 @@ services:
         gitlab_rails['monitoring_whitelist'] = ['0.0.0.0/0']
     ports:
       - "8280:80"
-    networks:
-      - cc-gitlab
-networks:
-  cc-gitlab:
-    name: cc-gitlab
-    driver: bridge

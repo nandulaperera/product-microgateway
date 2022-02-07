@@ -131,8 +131,7 @@ public class SourceControlUtils {
 
         Assert.assertNotNull(response);
         Assert.assertEquals(response.getResponseCode(), HttpStatus.SC_CREATED);
-
-        log.info("Artifacts committed to Git repository successfully");
+        log.info(commitMessage + " : Artifacts committed to Git repository successfully");
     }
 
     /**

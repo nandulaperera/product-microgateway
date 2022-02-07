@@ -18,11 +18,13 @@ artifactsDirectory = "/home/wso2/git-artifacts"
 [adapter.sourceControl]
   enabled = true
   pollInterval = 2
+  retryInterval = 30
   artifactsDirectory = "/home/wso2/git-artifacts"
   [adapter.sourceControl.repository]
     URL = "http://gitlab/root/testProject"
     username = "root"
     accessToken = "svcAdmin"
+    sshKeyFile = ""
 
 
 [router]

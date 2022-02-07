@@ -36,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 
 public class SourceWatcherTestCase {
 
-    private static final Logger log = LoggerFactory.getLogger(SourceWatcherTestCase.class);
     protected String jwtToken;
 
     @BeforeClass(description = "Initialize the setup")
