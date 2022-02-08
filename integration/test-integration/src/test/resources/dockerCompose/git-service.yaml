@@ -7,4 +7,4 @@
         gitlab_rails["initial_root_password"] = "svcAdmin"
         gitlab_rails['monitoring_whitelist'] = ['0.0.0.0/0']
     ports:
-      - "8280:80"
+      - "8285:80"

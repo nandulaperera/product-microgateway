@@ -19,6 +19,7 @@ package auth
 
 import (
 	"encoding/base64"
+	"errors"
 	"io/ioutil"
 
 	"github.com/wso2/product-microgateway/adapter/config"
@@ -69,5 +70,5 @@ func GetGitAuth() (transport.AuthMethod, error) {
 
 		return publicKey, nil
 	}
-	return &http.BasicAuth{}, nil
+	return nil, errors.New("No username or ssh key file provided")
 }

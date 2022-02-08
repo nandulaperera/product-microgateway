@@ -37,9 +37,9 @@ public class SourceControlUtils {
 
     private static final Logger log = LoggerFactory.getLogger(SourceControlUtils.class);
 
-    public static final String GIT_URL = "http://localhost:8280";
-    public static final String GIT_API_URL = "http://localhost:8280/api/v4";
-    public static final String GIT_HEALTH_URL = "http://localhost:8280/-/liveness";
+    public static final String GIT_URL = "http://localhost:8285";
+    public static final String GIT_API_URL = "http://localhost:8285/api/v4";
+    public static final String GIT_HEALTH_URL = "http://localhost:8285/-/liveness";
     public static final String ARTIFACTS_DIR = File.separator + "git-artifacts";
     public static final String GIT_USERNAME = "root";
     public static final String GIT_PASSWORD = "svcAdmin";

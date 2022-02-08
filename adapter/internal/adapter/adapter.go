@@ -256,7 +256,7 @@ func Run(conf *config.Config) {
 		go synchronizer.UpdateBlockingConditions()
 	} else {
 		if conf.Adapter.SourceControl.Enabled{
-			go sourcewatcher.Start()
+			sourcewatcher.Start()
 		} else {
 			_, err := api.ProcessMountedAPIProjects()
 			if err != nil {
