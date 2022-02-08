@@ -18,7 +18,6 @@
 
 package org.wso2.choreo.connect.tests.gitservice;
 
-import org.apache.commons.lang3.StringUtils;
 import org.wso2.choreo.connect.tests.context.CCTestException;
 import org.wso2.choreo.connect.tests.mockbackend.MockBackendServer;
 import org.wso2.choreo.connect.tests.util.Utils;

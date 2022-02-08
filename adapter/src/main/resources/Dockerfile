@@ -17,7 +17,8 @@
 FROM alpine:3.14.3
 LABEL maintainer="WSO2 Docker Maintainers <wso2.com>"
 
-RUN apk update && apk upgrade --no-cache
+RUN apk update && apk upgrade --no-cache && \
+    apk add openssh-client
 
 ENV LANG=C.UTF-8
 
@@ -41,7 +42,8 @@ ARG MOTD="\n\
 RUN \
     addgroup -S -g ${MG_USER_GROUP_ID} ${MG_USER_GROUP} \
     && adduser -S -u ${MG_USER_ID} -h ${MG_USER_HOME} -G ${MG_USER_GROUP} ${MG_USER} \
-    && mkdir ${MG_USER_HOME}/logs && chown -R ${MG_USER}:${MG_USER_GROUP} ${MG_USER_HOME}/logs \
+    && mkdir ${MG_USER_HOME}/logs ${MG_USER_HOME}/.ssh && chown -R ${MG_USER}:${MG_USER_GROUP} ${MG_USER_HOME}/logs ${MG_USER_HOME}/.ssh \
+    && ssh-keyscan -H github.com gitlab.com bitbucket.org >> ${MG_USER_HOME}/.ssh/known_hosts \
     && echo '[ ! -z "${TERM}" -a -r /etc/motd ] && cat /etc/motd' >> /etc/bash.bashrc; echo "${MOTD}" > /etc/motd
 
 COPY maven/grpc_health_probe-linux-amd64 ${GRPC_HEALTH_PROBE_PATH}
@@ -56,4 +58,4 @@ COPY maven/adapter-linux-amd64 adapter
 COPY maven/check_health.sh .
 COPY maven/LICENSE.txt .
 
-CMD ./adapter
+CMD sh -c "eval \"$(ssh-agent -s)\"  && ssh-add && ./adapter"
