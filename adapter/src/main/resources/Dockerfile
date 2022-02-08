@@ -58,4 +58,4 @@ COPY maven/adapter-linux-amd64 adapter
 COPY maven/check_health.sh .
 COPY maven/LICENSE.txt .
 
-CMD sh -c "eval \"$(ssh-agent -s)\"  && ssh-add && ./adapter"
+CMD eval "$(ssh-agent -s)" ; ssh-add ; ./adapter
